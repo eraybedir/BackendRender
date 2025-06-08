@@ -17,12 +17,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install ChromeDriver
-RUN CHROME_VERSION=$(google-chrome --version | awk '{print $3}' | cut -d'.' -f1) \
-    && wget -q "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/$CHROME_VERSION.0.5481.77/linux64/chromedriver-linux64.zip" \
-    && unzip chromedriver-linux64.zip \
-    && mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver \
+RUN wget -q https://chromedriver.storage.googleapis.com/114.0.5735.90/chromedriver_linux64.zip \
+    && unzip chromedriver_linux64.zip \
+    && mv chromedriver /usr/local/bin/chromedriver \
     && chmod +x /usr/local/bin/chromedriver \
-    && rm -rf chromedriver-linux64.zip chromedriver-linux64
+    && rm chromedriver_linux64.zip
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

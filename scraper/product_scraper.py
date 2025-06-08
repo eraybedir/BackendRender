@@ -1,10 +1,9 @@
 import time
 import json
 from selenium import webdriver
-from selenium.webdriver.edge.service import Service
-from selenium.webdriver.edge.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from bs4 import BeautifulSoup
 from pathlib import Path
 from datetime import datetime
@@ -22,16 +21,18 @@ class ProductScraper:
 
     def setup_driver(self):
         try:
-            edge_options = Options()
-            edge_options.add_argument('--headless')
-            edge_options.add_argument('--disable-gpu')
-            edge_options.add_argument('--window-size=1920,1080')
+            chrome_options = Options()
+            chrome_options.add_argument('--headless')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--window-size=1920,1080')
             
-            service = Service(EdgeChromiumDriverManager().install())
-            self.driver = webdriver.Edge(service=service, options=edge_options)
-            logger.info("Edge WebDriver başarıyla başlatıldı")
+            service = Service('/usr/local/bin/chromedriver')
+            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            logger.info("Chrome WebDriver başarıyla başlatıldı")
         except Exception as e:
-            logger.error(f"Edge WebDriver başlatılırken hata: {str(e)}")
+            logger.error(f"Chrome WebDriver başlatılırken hata: {str(e)}")
             raise
 
     def scrape_page(self, url, category, subcategory, item_category):
