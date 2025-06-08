@@ -1,9 +1,10 @@
 import time
 import json
 from selenium import webdriver
-from selenium.webdriver.edge.service import Service
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
+from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from pathlib import Path
 from datetime import datetime
@@ -17,8 +18,13 @@ class ProductScraper:
         self.driver = None
 
     def setup_driver(self):
-        service = Service(EdgeChromiumDriverManager().install())
-        self.driver = webdriver.Edge(service=service)
+        chrome_options = Options()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        
+        service = Service(ChromeDriverManager().install())
+        self.driver = webdriver.Chrome(service=service, options=chrome_options)
 
     def scrape_page(self, url, category, subcategory, item_category):
         page = 1
