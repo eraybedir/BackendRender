@@ -4,8 +4,8 @@ from api.server import app
 import os
 
 def run_flask():
-    port = int(os.getenv("FLASK_PORT", 5000))
-    app.run(port=port, debug=True, use_reloader=False)
+    port = int(os.getenv("PORT", 10000))
+    app.run(host="0.0.0.0", port=port, debug=False)
 
 def run_scheduler():
     scheduler = ScrapingScheduler()
