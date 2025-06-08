@@ -2,21 +2,13 @@ import pandas as pd
 import re
 from pathlib import Path
 from datetime import datetime
+from sqlalchemy.orm import Session
+from api.database import get_db, Product
 
 class NutritionMatcher:
-    def __init__(self, raw_dir="data/raw_products", nutrition_path="data/nutrition_values.csv", output_dir="data/enriched_products"):
-        self.raw_dir = Path(raw_dir)
+    def __init__(self, nutrition_path="data/nutrition_values.csv"):
         self.nutrition_path = Path(nutrition_path)
-        self.output_dir = Path(output_dir)
-        self.output_dir.mkdir(parents=True, exist_ok=True)
     
-    def get_latest_raw_csv(self):
-        csv_files = list(self.raw_dir.glob("products_*.csv"))
-        if not csv_files:
-            raise FileNotFoundError("Hiçbir scraping dosyası bulunamadı.")
-        latest = max(csv_files, key=lambda f: f.stat().st_mtime)
-        return latest
-
     def match_nutrition(self, product_name, nutrition_df):
         for _, row in nutrition_df.iterrows():
             keyword = row["AnahtarKelime"].lower()
@@ -31,18 +23,25 @@ class NutritionMatcher:
         return {"calories": None, "protein": None, "carbs": None, "fat": None}
 
     def run(self):
-        latest_csv = self.get_latest_raw_csv()
-        df = pd.read_csv(latest_csv)
+        print("🔍 Besin değerleri eşleştiriliyor...")
         nutrition_df = pd.read_csv(self.nutrition_path)
-
-        enriched_rows = []
-        for _, row in df.iterrows():
-            nutrition = self.match_nutrition(row["name"], nutrition_df)
-            enriched_rows.append({**row, **nutrition})
-
-        enriched_df = pd.DataFrame(enriched_rows)
-
-        today = datetime.today().strftime("%Y_%m_%d")
-        enriched_path = self.output_dir / f"enriched_{today}.csv"
-        enriched_df.to_csv(enriched_path, index=False, encoding="utf-8-sig")
-        print(f"✅ Zenginleştirilmiş veri kaydedildi: {enriched_path.resolve()}")
+        db = next(get_db())
+        
+        try:
+            # Get all products without nutrition values
+            products = db.query(Product).all()
+            
+            for product in products:
+                nutrition = self.match_nutrition(product.name, nutrition_df)
+                product.calories = nutrition["calories"]
+                product.protein = nutrition["protein"]
+                product.carbs = nutrition["carbs"]
+                product.fat = nutrition["fat"]
+            
+            db.commit()
+            print(f"✅ {len(products)} ürün için besin değerleri eşleştirildi.")
+        except Exception as e:
+            db.rollback()
+            print(f"❌ Besin değeri eşleştirme sırasında hata: {str(e)}")
+        finally:
+            db.close()
